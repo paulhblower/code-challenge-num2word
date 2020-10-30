@@ -1,0 +1,189 @@
+test.data <- read.csv("~/Downloads/test_input.txt")
+input <- test.data[,"Input"]
+input
+
+
+library(dbplyr)
+library(forcats)
+library(stringr)
+library(dplyr)
+library(purrr)
+library(readr)
+library(tidyr)
+library(tibble)
+library(ggplot2)
+library(tidyverse)
+
+
+number.to.words <- function(x){
+  
+  helper <- function(x){
+    
+    digits <- rev(strsplit(as.character(x), "")[[1]])
+    nDigits <- length(digits)
+    if (nDigits == 1) as.vector(ones[digits])
+    else if (nDigits == 2)
+      if (x <= 19) as.vector(teens[digits[1]])
+    else trim(paste0(tens[digits[2]],
+                     Recall(as.numeric(digits[1]))))
+    else if (nDigits == 3) trim(paste(ones[digits[3]], "hundred and", 
+                                      Recall(makeNumber(digits[2:1]))))
+    else {
+      nSuffix <- ((nDigits + 2) %/% 3) - 1
+      if (nSuffix > length(suffixes)) stop(paste(x, "error"))
+      trim(paste(Recall(makeNumber(digits[
+        nDigits:(3*nSuffix + 1)])),
+        suffixes[nSuffix],  
+        Recall(makeNumber(digits[(3*nSuffix):1]))))
+    }
+  }
+  trim <- function(text){
+    gsub("^\ ", "", gsub("\ *$", "", text))
+  }  
+  makeNumber <- function(...) as.numeric(paste(..., collapse=""))     
+  
+  ones <- c("", "one", "two", "three", "four", "five", "six", "seven",
+            "eight", "nine") 
+  names(ones) <- 0:9 
+  teens <- c("ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+             "sixteen", " seventeen", "eighteen", "nineteen")
+  names(teens) <- 0:9 
+  tens <- c("twenty-", "thirty-", "forty-", "fifty-", "sixty-", "seventy-", 
+            "eighty-", "ninety-") 
+  names(tens) <- 2:9 
+  x <- round(x)
+  suffixes <- c("thousand", "million", "billion", "trillion")     
+  if (length(x) > 1) return(sapply(x, helper))     
+  helper(x)
+}
+
+
+raw.number <- gsub("[^0-9]", "", input)
+
+clean.number <- 0
+
+for(n in 1:(length(input))) {
+  if(length(grep(paste0(" ",raw.number[n], " "), input[n]))>0){
+    clean.number[n] <- as.numeric(raw.number[n])
+  } else if(length(grep(paste0(" ",raw.number[n], "\n"), input[n]))>0){
+    clean.number[n] <- as.numeric(raw.number[n])
+  } else if(length(grep(paste0("\n",raw.number[n], " "), input[n]))>0){
+    clean.number[n] <- as.numeric(raw.number[n])
+  } else if(length(grep(paste0("\n",raw.number[n], "\n"), input[n]))>0){
+    clean.number[n] <- as.numeric(raw.number[n])
+  } else if(length(grep(paste0(" ",raw.number[n], "."), input[n]))>0){
+    clean.number[n] <- as.numeric(raw.number[n])
+  } else if(length(grep(paste0("\n",raw.number[n], "."), input[n]))>0){
+    clean.number[n] <- as.numeric(raw.number[n])
+  } else clean.number[n] <- 0
+}
+
+tri.num <- 0
+bil.num <- 0
+mil.num <- 0
+tho.num <- 0
+hun.num <- 0
+ten.num <- 0
+
+for(n in 1:(length(input))) {
+  tri.num[n] <- as.numeric(substr(trunc(clean.number[n]/1000000000000),
+                                  (nchar(trunc(clean.number[n]/1000000000000)))-2,
+                                  (nchar(trunc(clean.number[n]/1000000000000)))))
+  bil.num[n] <- as.numeric(substr(trunc(clean.number[n]/1000000000),
+                                  (nchar(trunc(clean.number[n]/1000000000)))-2,
+                                  (nchar(trunc(clean.number[n]/1000000000)))))
+  mil.num[n] <- as.numeric(substr(trunc(clean.number[n]/1000000),
+                                  (nchar(trunc(clean.number[n]/1000000)))-2,
+                                  (nchar(trunc(clean.number[n]/1000000)))))
+  tho.num[n] <- as.numeric(substr(trunc(clean.number[n]/1000),
+                                  (nchar(trunc(clean.number[n]/1000)))-2,
+                                  (nchar(trunc(clean.number[n]/1000)))))
+  hun.num[n] <- as.numeric(substr(trunc(clean.number[n]/100),
+                                  (nchar(trunc(clean.number[n]/100))),
+                                  (nchar(trunc(clean.number[n]/100)))))
+  ten.num[n] <-  as.numeric(if((substr(trunc(clean.number[n]/1),
+                                       (nchar(trunc(clean.number[n]/1)))-1,
+                                       (nchar(trunc(clean.number[n]/1)))-1)) ==0){
+    substr(trunc(clean.number[n]/1),(nchar(trunc(clean.number[n]/1))),
+           (nchar(trunc(clean.number[n]/1))))
+  } else substr(trunc(clean.number[n]/1),(nchar(trunc(clean.number[n]/1)))-1,
+                (nchar(trunc(clean.number[n]/1)))))
+}
+
+
+tri <- ""
+bil <- ""
+mil <- ""
+tho <- ""
+hun <- ""
+ten <- ""
+
+for(n in 1:(length(input))) {
+  if((number.to.words(tri.num[n]))==""){
+    tri[n] <- ""
+  } else tri[n] <- paste(number.to.words(tri.num[n]),"trillion")
+  
+  if((number.to.words(bil.num[n]))==""){
+    bil[n] <- ""
+  } else bil[n] <- paste(number.to.words(bil.num[n]),"billion")
+  
+  if((number.to.words(mil.num[n]))==""){
+    mil[n] <- ""
+  } else mil[n] <- paste(number.to.words(mil.num[n]),"million")
+  
+  if((number.to.words(tho.num[n]))==""){
+    tho[n] <- ""
+  } else tho[n] <- paste(number.to.words(tho.num[n]),"thousand")
+  
+  if((number.to.words(hun.num[n]))==""){
+    hun[n] <- ""
+  } else hun[n] <- paste(number.to.words(hun.num[n]),"hundred")
+  
+  if((number.to.words(ten.num[n]))==""){
+    ten[n] <- ""
+  } else ten[n] <- number.to.words(ten.num[n])
+}
+
+
+n <- 1:length(input)
+
+generate_name <- function(n) {
+  
+  out.a <- c(tri[n], bil[n], mil[n], tho[n], hun[n], ten[n])
+  out.a
+  
+  
+  out.b <- out.a[out.a != ""]
+  out.b
+  
+  out.c <- ""
+  for(i in 1:(length(out.b))) {
+    out.c[i] <- if((length(out.b)-i)>1){
+      paste0(out.b[i],",")
+    } else out.b[i]
+  }
+  
+  out.d <- ""
+  for(i in 1:(length(out.c))) {
+    out.d[i] <- if(length(out.c)==i){
+      paste0("and ",out.c[i])
+    } else out.c[i]
+  }
+  
+  out.e <- paste(out.d, collapse = " ")
+  
+  out.f <- ""
+  if(clean.number[n] ==0){
+    out.f <- "number invalid"
+  } else out.f <- out.e
+  return(out.f)
+}
+
+out.final <- map(n,generate_name) %>%
+  enframe()%>%
+  unnest(cols=c(value))%>%
+  pull(value)
+
+
+out.final
+
