@@ -1,4 +1,4 @@
-code-challenge-num2word
+**code-challenge-num2word
 
 In this repository there are two R script files, one of which uses the example 'Test input' and shows that the output produced matches the 'Expected output'. The second script reads from a plain text file, and currently this is located at "~/Downloads/test_input.txt". This can easily be adjusted if needed. The plain text file has a header named 'Input', similar to the test case. The files should load all necessary packages into the library.
 
